@@ -8,7 +8,7 @@ class MomentService {
 
   async queryList(offset = 0, size = 10) {
     const statement = `select m.id id, m.content content,m.createAt createTime, m.updateAt updateTime,
-json_object('id',u.id,'name',u.name,'createTime',u.createAt,'updateTime',u.updateAt) user,
+json_object('id',u.id,'name',u.name,'avatarUrl',u.avatar_url,'createTime',u.createAt,'updateTime',u.updateAt) user,
 (select count(*)  from comment where moment_id = m.id) commentCount,
 (select count(*)  from moment_label where moment_id = m.id) labelCount 
 FROM moment m left join user u on u.id = m.user_id limit ?,?;`;
@@ -18,7 +18,7 @@ FROM moment m left join user u on u.id = m.user_id limit ?,?;`;
 
   async getMomentById(momentId) {
     const statement1 = `select m.id id, m.content content,m.createAt createTime, m.updateAt updateTime,
-    json_object('id',u.id,'name',u.name,'createTime',u.createAt,'updateTime',u.updateAt) user,
+    json_object('id',u.id,'name',u.name,'avatarUrl',u.avatar_url,'createTime',u.createAt,'updateTime',u.updateAt) user,
     (select count(*)  from comment where moment_id = m.id) commentCount,
     (select count(*)  from moment_label where moment_id = m.id) labelCount
     FROM moment m left join user u on u.id = m.user_id 
@@ -28,11 +28,12 @@ FROM moment m left join user u on u.id = m.user_id limit ?,?;`;
     const [result2] = await connection.execute(statement2, [momentId]);
     const statement3 = `select  user_id from comment where moment_id = ?;`;
     const [result3] = await connection.execute(statement3, [momentId]);
+
     if (result3.length === 0) {
       return result1;
     } else {
       const userId = result3[0].user_id;
-      const statement4 = `select id, name from user where id = ?;`;
+      const statement4 = `select id, name, avatar_url from user where id = ?;`;
       const [result4] = await connection.execute(statement4, [userId]);
 
       for (let i = 0; i < result2.length; i++) {
@@ -49,7 +50,6 @@ FROM moment m left join user u on u.id = m.user_id limit ?,?;`;
         ]);
         result5[i].name = result6[0].name;
       }
-      console.log(result5);
 
       // console.log(result, result2);
       const data = { ...result1[0], commentsList: result2, labels: result5 };
